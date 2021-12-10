@@ -1,0 +1,39 @@
+name: Deply MultiDocker
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    # login and run tests
+      - uses: actions/checkout@v2
+      - run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+      - run: docker run -e CI=true galveve/react-multi-test -f ./client/Dockerfile.dev ./client
+    # build images
+      - docker build -t galveve/multi-client ./client
+      - docker build -t galveve/multi-nginx ./nginx
+      - docker build -t galveve/multi-server ./server
+      - docker build -t galveve/multi-worker ./worker
+    # push to dockerfile to update apps
+      - docker push galveve/multi-client
+      - docker push galveve/multi-nginx
+      - docker push galveve/multi-server
+      - docker push galveve/multi-worker
+
+    #   - name: Generate deplyment package
+    #     run: zip -r deploy.zip . -x '*.git'
+
+    #   - name: Deploy to EB
+    #     uses: einaregilsson/beanstalk-deploy@v18
+    #     with:
+    #       aws_access_key: ${{ secrets.AWS_ACCESS_KEY }}
+    #       aws_secret_key: ${{ secrets.AWS_SECRET_KEY }}
+    #       application_name: multi-gh
+    #       environment_name: Multigh-env
+    #       existingg_bucket_name: elasticbeanstalk-mx-weast-2-123412341
+    #       region: mx-west-2
+    #       version_label: ${{ github.sha }}
+    #       deployment_package: deply.zip

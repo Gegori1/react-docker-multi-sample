@@ -1,0 +1,23 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t galveve/react-multi-test -f ./client/Dockerfile.dev ./client
+
+script:
+ - docker run -e CI=true stephengrider/react-test npm test
+
+after_success:
+  - docker build -t galveve/multi-client ./client
+  - docker build -t galveve/multi-nginx ./nginx
+  - docker build -t galveve/multi-server ./server
+  - docker build -t galveve/multi-worker ./worker
+
+# login to docker CLI
+  - echo "$DOCKER_PASSWORD" | docker_login -u "$DOCKER_ID" --password-stdin
+# push to dockerfile to update apps 
+  - docker push galveve/multi-client
+  - docker push galveve/multi-nginx
+  - docker push galveve/multi-server
+  - docker push galveve/multi-worker
